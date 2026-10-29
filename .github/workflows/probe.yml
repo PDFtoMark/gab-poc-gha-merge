@@ -1,0 +1,38 @@
+name: probe head sha availability
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  probe:
+    if: ${{ github.event.issue.pull_request }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          filter: 'blob:none'
+          fetch-depth: 0
+          ref: main
+      - name: Probe
+        env:
+          PR_NUMBER: ${{ github.event.issue.number }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          pr="$(gh api -H "Accept: application/vnd.github+json" /repos/${GH_REPO}/pulls/${PR_NUMBER})"
+          head_sha="$(echo "$pr" | jq -r .head.sha)"
+          base_sha="$(echo "$pr" | jq -r .base.sha)"
+          echo "PROBE base_sha=$base_sha head_sha=$head_sha"
+          if git cat-file -e "$head_sha"; then echo "PROBE_HEAD_PRESENT=yes"; else echo "PROBE_HEAD_PRESENT=no"; fi
+          if git cat-file -e "$base_sha"; then echo "PROBE_BASE_PRESENT=yes"; else echo "PROBE_BASE_PRESENT=no"; fi
+          set +e
+          out="$(git diff --name-only -z ${base_sha}...${head_sha} 2>/tmp/gitdiff.err)"
+          code=$?
+          echo "PROBE_DIFF_EXIT=$code"
+          echo "PROBE_DIFF_BYTES=${#out}"
+          echo "PROBE_DIFF_STDERR=$(tr '\n' ' ' < /tmp/gitdiff.err)"
+          echo "PROBE_LOCAL_MAIN=$(git rev-parse HEAD)"
